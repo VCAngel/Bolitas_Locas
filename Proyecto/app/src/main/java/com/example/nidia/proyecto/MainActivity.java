@@ -9,9 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.example.nidia.proyecto.Grafico.PantallaJuego;
+import com.example.nidia.proyecto.Grafico.LoginUsuarios;
 import com.example.nidia.proyecto.Grafico.RegistroUsuarios;
-import com.example.nidia.proyecto.UtilidadesBDD.Utilidades;
 
 public class MainActivity extends Activity {
     EditText user, pass;
@@ -24,8 +23,6 @@ public class MainActivity extends Activity {
 
         registro = findViewById(R.id.registrarse);
         log = findViewById(R.id.login);
-        user = findViewById(R.id.user);
-        pass = findViewById(R.id.lpass);
 
         registro.setOnClickListener(onClickListener);
         log.setOnClickListener(onClickListener);
@@ -44,28 +41,14 @@ public class MainActivity extends Activity {
     private void pressed(View view){
         switch(view.getId()){
             case R.id.registrarse:
-                Intent intent = new Intent(this, RegistroUsuarios.class);
-                startActivity(intent);
+                Intent intent1 = new Intent(this, RegistroUsuarios.class);
+                startActivity(intent1);
                 break;
             case R.id.login:
-                buscarUsuarios();
+                Intent intent2 = new Intent(this, LoginUsuarios.class);
+                startActivity(intent2);
                 break;
         }
     }
 
-    private void buscarUsuarios() {
-        ConexionBDD conn = new ConexionBDD(this,"bd_usuarios",null,1);
-        SQLiteDatabase db = conn.getWritableDatabase();
-        String[] where = new String[]{user.getText().toString(),pass.getText().toString()};
-        Cursor c = db.rawQuery("SELECT * FROM " + Utilidades.tabla_usuarios,where);
-        if(c!=null){
-            c.moveToFirst();
-            do {
-                String userName = c.getString(c.getColumnIndex(Utilidades.campo_userName));
-                Integer puntucaion = c.getInt(c.getColumnIndex(Utilidades.campo_puntuacion));
-                Intent intent = new Intent(this, PantallaJuego.class);
-                startActivity(intent);
-            }while(c.moveToNext());
-        }
-    }
 }

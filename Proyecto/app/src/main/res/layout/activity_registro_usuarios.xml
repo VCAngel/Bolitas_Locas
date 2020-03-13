@@ -21,7 +21,7 @@
 
         <EditText
             android:id="@+id/userName"
-            android:layout_width="204dp"
+            android:layout_width="380dp"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="80dp"
@@ -38,7 +38,7 @@
 
         <EditText
             android:id="@+id/cuenta"
-            android:layout_width="204dp"
+            android:layout_width="380dp"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="180dp"
@@ -57,7 +57,7 @@
 
         <EditText
             android:id="@+id/pass"
-            android:layout_width="wrap_content"
+            android:layout_width="380dp"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="280dp"
