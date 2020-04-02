@@ -63,8 +63,7 @@ public class LoginUsuarios extends Activity {
                 SQLiteDatabase db = conn.getWritableDatabase();
                 Cursor c = db.rawQuery("SELECT * FROM " + Utilidades.tabla_usuarios,null);
                 Boolean ban = false;
-                if(c!=null){
-                    c.moveToFirst();
+                if(c.moveToFirst()){
                     do {
                         String userName = c.getString(c.getColumnIndex(Utilidades.campo_userName));
                         String pass = c.getString(c.getColumnIndex(Utilidades.campo_pass));

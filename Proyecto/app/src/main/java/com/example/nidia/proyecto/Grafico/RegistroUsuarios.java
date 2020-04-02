@@ -72,8 +72,7 @@ public class RegistroUsuarios extends Activity {
         //db.execSQL("DELETE FROM "+ Utilidades.tabla_usuarios); //BORRAR LOS REGISTROS DE LA BASE DE DATOS SOLO PARA PRUEBAS
         num = (int)(Math.random())+1;
 //BUSCAR VALORES REPETIDOS
-        if(c!=null){
-            c.moveToFirst();
+       if(c.moveToFirst()){
             do{
                 String userName = c.getString(c.getColumnIndex(Utilidades.campo_userName));
                 String cuenta = c.getString(c.getColumnIndex(Utilidades.campo_cuenta));
