@@ -11,7 +11,7 @@ class Bolitas {
     private var color: Int = 0
     private var value: Int? = null
 
-    constructor(size: Int, color: Int, stroke: Int){
+    constructor(size: Int, color: Int, stroke: Int){ // --> Bolita del jugador
         this.size = size;
         if(color < 0 || color >= colorArray.size)
             this.color = Color.BLUE
