@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Grafico.PantallaJuego">
+
+    <FrameLayout
+        android:id="@+id/pjCanvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:stretchColumns="*"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TableRow android:paddingTop="10dp">
+
+            <TextView
+                android:id="@+id/pjUser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:paddingLeft="25dp"
+                android:text="'Nombre jugador'"
+                android:textColor="@color/colorAccent"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/pjPuntuacion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:text="'Puntuación:"
+                android:textColor="@color/colorAccent"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/pjSalir"
+                style="@style/Widget.AppCompat.Button.Colored"
+<<<<<<< HEAD
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+=======
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:background="@drawable/pj_exit_button"
+>>>>>>> master
+                android:text="Salir" />
+        </TableRow>
+    </TableLayout>
+</android.support.constraint.ConstraintLayout>
