@@ -2,6 +2,8 @@ package com.example.nidia.proyecto;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.AnimationDrawable;
@@ -31,6 +33,12 @@ public class MainActivity extends Activity {
         /*user.findViewById(R.id.user);
         pass.findViewById(R.id.lpass);*/
     }
+
+    /*@Override
+    public void onConfigurationChanged(Configuration configuration){
+        super.onConfigurationChanged(configuration);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }*/
 
     View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
