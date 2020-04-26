@@ -7,7 +7,7 @@
     tools:context=".Grafico.PantallaJuego">
 
     <FrameLayout
-        android:id="@+id/pjCanvas"
+        android:id="@+id/pjCanvasJugador"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
