@@ -25,7 +25,7 @@ public class LoginUsuarios extends Activity {
     AnimationDrawable ani;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState){
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
@@ -51,51 +51,51 @@ public class LoginUsuarios extends Activity {
         }
     };
 
-    private void pressed(View view){
-        switch(view.getId()){
+    private void pressed(View view) {
+        switch (view.getId()) {
             case R.id.lRegistrarse:
                 //Intent intent = new Intent(this, RegistroUsuarios.class);
                 startActivity(new Intent(this, RegistroUsuarios.class));
                 break;
             case R.id.lLogin:
-                ConexionBDD conn = new ConexionBDD(this,"bd_usuarios",null,1);
+                ConexionBDD conn = new ConexionBDD(this, "bd_usuarios", null, 1);
                 SQLiteDatabase db = conn.getWritableDatabase();
-                Cursor c = db.rawQuery("SELECT * FROM " + Utilidades.tabla_usuarios,null);
+                Cursor c = db.rawQuery("SELECT * FROM " + Utilidades.tabla_usuarios, null);
                 Boolean ban = false;
-                if(c.moveToFirst())
+                if (c.moveToFirst())
                     do {
                         String userName = c.getString(c.getColumnIndex(Utilidades.campo_userName));
                         String pass = c.getString(c.getColumnIndex(Utilidades.campo_pass));
                         int puntuacion = c.getInt(c.getColumnIndex(Utilidades.campo_puntuacion));
                         String punt = String.valueOf(puntuacion);
-                        if(userName.equals(lUser.getText().toString()) && pass.equals(lPass.getText().toString())){
+                        if (userName.equals(lUser.getText().toString()) && pass.equals(lPass.getText().toString())) {
                             Intent intent = new Intent(this, PantallaJuego.class);
-                            intent.putExtra("pjrUser",userName);
-                            intent.putExtra("pjrPuntuacion",punt);
+                            intent.putExtra("pjrUser", userName);
+                            intent.putExtra("pjrPuntuacion", punt);
                             startActivity(intent);
                             finish();
                             //startActivity(new Intent(this, PantallaJuego.class));
-                            Toast.makeText(this, "Holaa" + userName + pass , Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "A jugar!!!", Toast.LENGTH_SHORT).show();
                             ban = true;
                             break;
                         }
-                    }while(c.moveToNext());
-                    if(!ban){
-                        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-                        dialog.setTitle("Importante");
-                        dialog.setMessage("Usuario no encontrado");
-                        dialog.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                lUser.setText("");
-                                lPass.setText("");
-                                lUser.requestFocus();
-                                dialog.dismiss();
-                            }
-                        });
-                        dialog.show();
-                    }
+                    } while (c.moveToNext());
+                if (!ban) {
+                    AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+                    dialog.setTitle("IMPORTANTE");
+                    dialog.setMessage("Usuario no encontrado");
+                    dialog.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            lUser.setText("");
+                            lPass.setText("");
+                            lUser.requestFocus();
+                            dialog.dismiss();
+                        }
+                    });
+                    dialog.show();
                 }
         }
     }
+}
 
 

@@ -71,35 +71,34 @@ public class PantallaJuego extends AppCompatActivity {
     private class AreaJuego extends View { // --> Clase que representa el área donde se encuentra el juego
         private Bolitas jugador;
         private Path pathJugador = new Path();
-        private int cantidadComida = 16; // --> Cantidad de comida predefinida dentro del area de juego
+        private int cantidadComida = 10; // --> Cantidad de comida predefinida dentro del area de juego
 
         private ListaComponente listaComida = new ListaComponente(); //Lista de Comida, para mantener el seguimiento y control de cada objeto
 
         private String action = ""; //Accion realizada en el canvas
-        private float xCalculada = 0, yCalculada = 0; //Coordenadas calculadas de la comida
+
+        private float xCalculada = 0, yCalculada = 0; //Coordenadas calculadas del jugador
         private float x2 = 0, y2 = 0; //Punto hacia donde se arrastra la pantalla
         private float x2ini = 0, y2ini = 0; //Punto donde se presiona la pantalla inicialmente
         private float canvasSizeX = 0, canvasSizeY = 0;
-        private float areaSpawnX = 0, areaSpawnY = 0;
+
         private boolean startingState = false;// Estado inicial del juego
 
         public AreaJuego(Context context) { // --> Constructor inicia de la clase
             super(context);
 
             for (int i = 0; i < cantidadComida; i++) {
-                listaComida.add(new NodoComida(new Path()));
+                listaComida.addBegin(new NodoComida(new Path()));
             }
-            jugador = new Bolitas(30, 5, 0);
+            jugador = new Bolitas(35, 5);
         }
 
         public void onDraw(Canvas canvas) { //Se dibuja el canvas, se mantiene actualizándose continuamente
             super.onDraw(canvas);
-            Paint paint = paintProperties();
+            Paint paintFill = paintPropertiesFill();
+            Paint paintStroke = paintPropertiesStroke();
             canvasSizeX = canvas.getWidth();
             canvasSizeY = canvas.getHeight();
-            areaSpawnX = canvasSizeX / 6;
-            areaSpawnY = canvasSizeY / 4;
-            //areaSpawnX|Y --> Las areas donde pueden aparecer los objetos fuera de pantalla
 
             if (!startingState) { //Estado Inicial del juego
                 for (int i = 0; i < listaComida.size(); i++) {
@@ -113,53 +112,54 @@ public class PantallaJuego extends AppCompatActivity {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
-                    verifyNodeState(listaComida);
                 }
 
-                pathJugador.addCircle(canvasSizeX / 2, canvasSizeY / 2, jugador.getSize(), Path.Direction.CCW);
+                xCalculada = canvasSizeX / 2;
+                yCalculada = canvasSizeY / 2;
+
+                jugador.setPosiX(xCalculada);
+                jugador.setPosiY(yCalculada);
+                pathJugador.addCircle(xCalculada, yCalculada, jugador.getSize(), Path.Direction.CCW);
                 startingState = true;
             }
 
             if (action.equals("move")) {
                 /*
                 Aqui se evalua el estado del MotionEvent sobre el Canvas, una vez evaluado se hacen los calculos necesarios
-                para manejar el posicionamiento de la Comida
-                Puesto que la comida se encuentra en ubicaciones aleatorias se tiene que hacer un calculo un poco
-                raro de entender, sin embargo, muy practico
+                para manejar el posicionamiento del jugador
                  */
                 float pixelesX = x2ini - x2;
                 float pixelesY = y2ini - y2;
 
-                xCalculada -= pixelesX;
-                yCalculada -= pixelesY;
+                // vvv Para mantener al jugador dentro del area de la pantalla vvv
+                if (jugador.getPosiX() >= canvasSizeX) {
+                    xCalculada = canvasSizeX - 0.1f;
+                } else if (jugador.getPosiX() <= 0) {
+                    xCalculada = 0.1f;
+                } else {
+                    xCalculada -= pixelesX;
+                }
+
+                if (jugador.getPosiY() >= canvasSizeY) {
+                    yCalculada = canvasSizeY - 0.1f;
+                } else if (jugador.getPosiY() <= 0) {
+                    yCalculada = 0.1f;
+                } else {
+                    yCalculada -= pixelesY;
+                }
+                // ^^^ - - - - - - - - - - - - - - - - - - - - - - - - - - - ^^^
+
                 x2ini = x2;
                 y2ini = y2;
 
-                for (int i = 0; i < listaComida.size(); i++) {
-                    try {
-                        listaComida.getAt(i).getPath().reset();
-                        listaComida.getAt(i).getPath().addCircle(xCalculada + listaComida.getAt(i).getPosiX(), yCalculada + listaComida.getAt(i).getPosiY(),
-                                listaComida.getAt(i).getComida().getSize(), Path.Direction.CCW);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+                jugador.setPosiX(xCalculada);
+                jugador.setPosiY(yCalculada);
+                pathJugador.reset();
+                pathJugador.addCircle(xCalculada, yCalculada, jugador.getSize(), Path.Direction.CCW);
             }
 
-            verifyNodeState(listaComida); //Verificar que los nodos se encuentran en el area de juego
-
-            for (int i = 0; i < listaComida.size(); i++) {
-                try {
-                    if (!listaComida.getAt(i).isDentroAreaJuego()) { // --> Si los nodos no se encuentran dentro del area de juego, estos se eliminan para ahorrar memoria
-                        listaComida.deleteAt(i);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            verifyNodeQuantity(listaComida, canvas);
+            verifyNodeEaten(listaComida, jugador);
+            addComidaRandom(listaComida);
 
             for (int i = 0; i < listaComida.size(); i++) {
                 try {
@@ -168,56 +168,59 @@ public class PantallaJuego extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-            canvas.drawPath(pathJugador, paint);
+            canvas.drawPath(pathJugador, paintFill);
+            canvas.drawPath(pathJugador, paintStroke);
+
+            invalidate();
         }
 
-        public void verifyNodeQuantity(ListaComponente listaComponente, Canvas canvas) {
-            int listaTamaño = listaComponente.size();
-            if (listaTamaño < cantidadComida) {
+        public void verifyNodeEaten(ListaComponente listaComponente, Bolitas bolita) {
+            int listaSize = listaComponente.size();
+            for (int i = 0; i < listaSize; i++) {
                 try {
-                    for (int i = listaTamaño; i <= cantidadComida; i++) {
-                        listaComponente.add(new NodoComida(new Path()));
-                        listaComida.getAt(i).setPosiX((float) (Math.random() * ()) + 1);
-                        listaComida.getAt(i).setPosiY((float) (Math.random() * (canvasSizeY)) + 1);
-
-                        listaComponente.getAt(i).getPath().addCircle(canvasSizeX + areaSpawnX, canvasSizeY + areaSpawnY,
-                                listaComponente.getAt(i).getComida().getSize(), Path.Direction.CCW);
-                        canvas.drawPath(listaComponente.getAt(i).getPath(), paintProperties(i));
+                    if (listaComponente.getAt(i).isBetween(jugador.getPosiX() - 25, jugador.getPosiX() + 25,
+                            jugador.getPosiY() - 25, jugador.getPosiY() + 25)) {
+                        listaComponente.deleteAt(i);
+                        listaSize--;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-        }// --> Comprueba que hay suficientes nodos dentro del area de juego, en caso contrario, los agrega
+        }// --> Comprueba si un nodo se encuentra en la misma posicion que el jugador
 
-        private void verifyNodeState(ListaComponente listaComponente) {
-            for (int i = 0; i < listaComponente.size(); i++) {
+        private void addComidaRandom(ListaComponente listaComponente) {
+            int listaSize = listaComponente.size();
+            int randomNum = (int) (Math.random() * 50) + 1;
+            if (randomNum == 1) {
+                listaComponente.addBegin(new NodoComida(new Path()));
                 try {
-                    float positionX = xCalculada + listaComponente.getAt(i).getPosiX();
-                    float positionY = yCalculada + listaComponente.getAt(i).getPosiY();
-
-                    if (positionX > (canvasSizeX + areaSpawnX)) // --> X positivo en coordenadas
-                        listaComponente.getAt(i).setDentroAreaJuego(false);
-                    if (positionX < (-areaSpawnX)) // --> X negativo en coordenadas
-                        listaComponente.getAt(i).setDentroAreaJuego(false);
-                    if (positionY > (canvasSizeY + areaSpawnY)) // --> Y positivo en coordenadas
-                        listaComponente.getAt(i).setDentroAreaJuego(false);
-                    if (positionY < (-areaSpawnY)) // --> Y negativo en coordenadas
-                        listaComponente.getAt(i).setDentroAreaJuego(false);
-
+                    listaComponente.getAt(0).setPosiX((float) (Math.random() * (canvasSizeX)) + 1);
+                    listaComponente.getAt(0).setPosiY((float) (Math.random() * (canvasSizeY)) + 1);
+                    listaComponente.getAt(0).getPath().addCircle(listaComponente.getAt(0).getPosiX(), listaComponente.getAt(0).getPosiY(),
+                            listaComponente.getAt(0).getComida().getSize(), Path.Direction.CCW);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-        }// --> Comprueba si los nodos se encuentran dentro del area de juego, y les establece un boolean
+        }// --> agrega comida de manera aleatoria al area de juego
 
-        private Paint paintProperties() {
+        private Paint paintPropertiesFill() {
             Paint fillPaint = new Paint();
             fillPaint.setColor(jugador.getColor());
             fillPaint.setStyle(Paint.Style.FILL);
 
             return fillPaint;
-        } // --> Propiedades de trazado de las bolitas
+        } // --> Propiedades de relleno de la bolita del jugador
+
+        private Paint paintPropertiesStroke() {
+            Paint strokePaint = new Paint();
+            strokePaint.setColor(jugador.getStroke());
+            strokePaint.setStyle(Paint.Style.STROKE);
+            strokePaint.setStrokeWidth(10);
+
+            return strokePaint;
+        }// --> Propiedades de delineado de la bolita del jugador
 
         private Paint paintProperties(int value) {
             Paint fillPaint = new Paint();
@@ -235,13 +238,15 @@ public class PantallaJuego extends AppCompatActivity {
             if (evt.getAction() == MotionEvent.ACTION_DOWN) {
                 x2ini = evt.getX();
                 y2ini = evt.getY();
+                invalidate();
             }
             x2 = evt.getX();
             y2 = evt.getY();
-            if (evt.getAction() == MotionEvent.ACTION_MOVE)
-                action = "move";
 
-            invalidate();
+            if (evt.getAction() == MotionEvent.ACTION_MOVE) {
+                action = "move";
+                invalidate();
+            }
             return true;
         }
     }

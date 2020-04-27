@@ -7,21 +7,18 @@ class Bolitas {
     private var speed: Float? = null
     private val colorArray = arrayOf(Color.BLUE, Color.CYAN, Color.GRAY, Color.GREEN,
                                     Color.MAGENTA, Color.RED, Color.YELLOW)
-    private var stroke: Int = 0
+    private var stroke: Int = Color.BLACK;
     private var color: Int = 0
     private var value: Int? = null
+    private var posiX: Float = 0f
+    private var posiY: Float = 0f
 
-    constructor(size: Int, color: Int, stroke: Int){ // --> Bolita del jugador
+    constructor(size: Int, color: Int){ // --> Bolita del jugador
         this.size = size;
         if(color < 0 || color >= colorArray.size)
             this.color = Color.BLUE
         else
             this.color = colorArray[color]
-
-        if(stroke < 0 || stroke >= colorArray.size)
-            this.stroke = Color.BLUE
-        else
-            this.stroke = colorArray[stroke]
     }
 
     fun setSize(size: Int){
@@ -48,12 +45,6 @@ class Bolitas {
         return color;
     }
 
-    fun setStroke(stroke: Int){
-        if(stroke < 0 || stroke >= colorArray.size)
-            this.stroke = Color.BLUE
-        else
-            this.stroke = colorArray[stroke]
-    }
     fun getStroke():Int{
         return stroke
     }
@@ -63,5 +54,19 @@ class Bolitas {
     }
     fun getValue():Int?{
         return value
+    }
+
+    fun setPosiX(posiX: Float){
+        this.posiX = posiX
+    }
+    fun getPosiX():Float{
+        return posiX
+    }
+
+    fun setPosiY(posiY: Float){
+        this.posiY = posiY
+    }
+    fun getPosiY():Float{
+        return posiY
     }
 }

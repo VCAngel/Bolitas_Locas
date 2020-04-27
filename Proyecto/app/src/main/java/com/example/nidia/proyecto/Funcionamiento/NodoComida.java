@@ -20,7 +20,7 @@ public class NodoComida {
     }
 
     public NodoComida(Path comidaPath) {
-        this.comida = new Comida(10, (int) (Math.random() * 8));
+        this.comida = new Comida(15, (int) (Math.random() * 8));
         this.comidaPath = comidaPath;
         this.dentroAreaJuego = true;
         this.siguiente = null;
@@ -58,11 +58,16 @@ public class NodoComida {
         this.posiY = posiY;
     }
 
-    public void setDentroAreaJuego(boolean dentroAreaJuego){
+    public void setDentroAreaJuego(boolean dentroAreaJuego) {
         this.dentroAreaJuego = dentroAreaJuego;
     }
 
-    public boolean isDentroAreaJuego(){
-        return dentroAreaJuego;
+    // --> Verifica si el punto del nodo se encuentra dentro del area del circulo, para que pueda "comerselo"
+    public boolean isBetween(float xIzq, float xDer, float yArriba, float yAbajo) {
+        if ((this.getPosiX() > xIzq) && (this.getPosiX() < xDer)) {
+            if ((this.getPosiY() > yArriba) && (this.getPosiY() < yAbajo))
+                return true;
+        }
+        return false;
     }
 }
