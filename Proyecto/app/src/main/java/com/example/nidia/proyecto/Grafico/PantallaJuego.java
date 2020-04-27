@@ -36,6 +36,9 @@ public class PantallaJuego extends AppCompatActivity {
 =======
     FrameLayout pjCanvas;
     Button pjSalir;
+    boolean obsBande = false, obsBandeM = false;// Para dibujar el obstaculo
+    private Hilo1 obsH1;
+    private Hilo2 obsH2;// para iniciar los hilos
     //HideVisibilityStyle estilo;  //TODO Falta ocultar la barra de tareas y de acciones
 
 >>>>>>> master
@@ -87,7 +90,12 @@ public class PantallaJuego extends AppCompatActivity {
         String pjrPuntuacion = getIntent().getStringExtra("pjrPuntuacion");
         pjUserName.setText(pjrUser);
         pjPuntuacion.setText(pjrPuntuacion);
+<<<<<<< Updated upstream
         pjCanvas.addView(new AreaJuego(this));
+=======
+        pjCanvasJugador.addView(new AreaJuego(this));
+        inicio();// método que inicia los hilos
+>>>>>>> Stashed changes
     }
 
     View.OnClickListener onClickListener = new View.OnClickListener() {
@@ -113,9 +121,20 @@ public class PantallaJuego extends AppCompatActivity {
         });
         dialog.show();
     }
+    private void inicio(){//dar inicio a los hilos
+        obsH1 = new Hilo1();
+        obsH1.start();
+    }
 
     private class AreaJuego extends View { // --> Clase que representa el área donde se encuentra el juego
         private Bolitas jugador;
+<<<<<<< Updated upstream
+=======
+        private Path pathJugador = new Path();
+        private Obstaculo obs;
+        private Path pathObs = new Path();//Declaré un path para el obstaculo
+        private int cantidadComida = 10; // --> Cantidad de comida predefinida dentro del area de juego
+>>>>>>> Stashed changes
 
         private Comida[] comida = new Comida[100]; //Cantidad de comida en el juego -->
         //El arreglo anterior es temporal, solo para mostrar el funcionamiento, se usarán Listas
@@ -138,7 +157,12 @@ public class PantallaJuego extends AppCompatActivity {
                 comida[i] = new Comida(10, (int)(Math.random()*8), 0,0);
                 pathComida[i] = new Path();
             }
+<<<<<<< Updated upstream
             jugador = new Bolitas(30,5,0);
+=======
+            jugador = new Bolitas(35, 5);
+            obs = new Obstaculo(0,0,4,200,200);//No se si es mejor hacerlo con arreglos
+>>>>>>> Stashed changes
         }
 
         public void onDraw(Canvas canvas) { //Se dibuja el canvas, se mantiene actualizándose continuamente
@@ -175,6 +199,17 @@ public class PantallaJuego extends AppCompatActivity {
                 canvas.drawPath(pathJugador, paint);
                 startingState = true;
             }
+<<<<<<< Updated upstream
+=======
+            canvas.drawPath(pathJugador, paintFill);
+            canvas.drawPath(pathJugador, paintStroke);
+            if(obsBande){// se dibuja rectangulo cuando el hilo lo ermite (Creo que no funciona)
+                pathObs.addRect(obs.getLeft()+1, obs.getTop()+1, obs.getRight()+1, obs.getBottom()+1, Path.Direction.CCW);
+                canvas.drawPath(pathObs, paintPropertiesO());
+                //Esto solo dibuja un rectangulo, pero no lo mueve ni nada aun
+                obsBande = false;
+            }
+>>>>>>> Stashed changes
 
             for (int i = 0; i < comida.length; i++)
                 canvas.drawPath(pathComida[i], paintProperties(i));
@@ -187,7 +222,28 @@ public class PantallaJuego extends AppCompatActivity {
             fillPaint.setStyle(Paint.Style.FILL);
 
             return fillPaint;
+<<<<<<< Updated upstream
         } // --> Propiedades de trazado de las bolitas
+=======
+        } // --> Propiedades de relleno de la bolita del jugador
+
+        private Paint paintPropertiesStroke() {
+            Paint strokePaint = new Paint();
+            strokePaint.setColor(jugador.getStroke());
+            strokePaint.setStyle(Paint.Style.STROKE);
+            strokePaint.setStrokeWidth(10);
+
+            return strokePaint;
+        }// --> Propiedades de delineado de la bolita del jugador
+        private Paint paintPropertiesO() {
+            Paint fillPaint = new Paint();
+            fillPaint.setColor(obs.getColor());
+            fillPaint.setStyle(Paint.Style.FILL);
+
+            return fillPaint;
+        }// --> Propiedades de trazado de obstaculos
+
+>>>>>>> Stashed changes
         private Paint paintProperties(int value) {
             Paint fillPaint = new Paint();
             fillPaint.setColor(comida[value].getColor());
@@ -212,4 +268,75 @@ public class PantallaJuego extends AppCompatActivity {
 >>>>>>> master
     }
 
+<<<<<<< Updated upstream
+=======
+
+    //TODO Hacer que funcione el Hilo secundario, no jalaaa aaaaaah
+    private class BolitasThread implements Runnable { // --> Clase encargada de la ejecucion seucndaria de las Bolitas
+        private Canvas canvas;
+
+        public BolitasThread(Canvas canvas) {
+            this.canvas = canvas;
+        }
+
+        @Override
+        public void run() {
+            try {
+                for (int i = 0; i <= 10; i++) {
+                    Thread.sleep(5000);
+                    Toast.makeText(PantallaJuego.this, "AAAAAAAAH", Toast.LENGTH_SHORT).show();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private class Hilo1 extends Thread{
+        @Override
+        public void run() {
+            int x = 0;
+            do{
+                x = (int)(Math.random()*10000)+1;
+            }while(x<2500);
+            try {
+                Thread.sleep(x);// Duerme aleatorioamente de entre 2500 a 10000 milis
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        obsBande = true;// Permitir que se dibuje el rectangulo en onDraw
+                        Toast.makeText(PantallaJuego.this, "Terminó hilo1, deberia aparecer rectangulo", Toast.LENGTH_SHORT).show();
+                        obsH2 = new Hilo2();
+                        obsH2.start();
+                    }
+                });
+            }catch (InterruptedException e){
+                e.printStackTrace();
+            }
+        }
+    }
+    private class Hilo2 extends Thread{
+        @Override
+        public void run() {
+            int x = 0;
+            do{
+                x = (int)(Math.random()*10000)+1;
+            }while(x<2500);
+            try {
+                Thread.sleep(x);//Duerme aleatorioamente de entre 2500 a 10000 milis
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        obsBande = true;
+                        Toast.makeText(PantallaJuego.this, "Terminó hilo2, deberia aparecer rectangulo", Toast.LENGTH_SHORT).show();
+                        obsH1 = new Hilo1();
+                        obsH1.start();
+                    }
+                });
+            }catch (InterruptedException e){
+                e.printStackTrace();
+            }
+        }
+    }
+>>>>>>> Stashed changes
 }
+
