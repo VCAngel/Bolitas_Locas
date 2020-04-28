@@ -2,6 +2,7 @@ package com.example.nidia.proyecto.Grafico;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -15,14 +16,21 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.nidia.proyecto.ConexionBDD;
 import com.example.nidia.proyecto.Funcionamiento.*;
 
 import com.example.nidia.proyecto.R;
+
+import static com.example.nidia.proyecto.UtilidadesBDD.Utilidades.*;
 
 public class PantallaJuego extends AppCompatActivity {
     TextView pjUserName, pjPuntuacion;
     FrameLayout pjCanvasJugador;
     Button pjSalir;
+    boolean obsBande = false, obsBandeM = false;// Para dibujar el obstaculo
+    private Hilo1 obsH1;
+    private Hilo2 obsH2;// para iniciar los hilos
+    private int puntuacion = 0;
     //HideVisibilityStyle estilo;  //TODO Falta ocultar la barra de tareas y de acciones
 
     @Override
@@ -41,7 +49,9 @@ public class PantallaJuego extends AppCompatActivity {
         String pjrPuntuacion = getIntent().getStringExtra("pjrPuntuacion");
         pjUserName.setText(pjrUser);
         pjPuntuacion.setText(pjrPuntuacion);
+        puntuacion = Integer.parseInt(pjrPuntuacion);
         pjCanvasJugador.addView(new AreaJuego(this));
+        //inicio();// método que inicia los hilos
     }
 
     View.OnClickListener onClickListener = new View.OnClickListener() {
@@ -57,6 +67,8 @@ public class PantallaJuego extends AppCompatActivity {
         dialog.setMessage("¿Desea salir de este juego?");
         dialog.setPositiveButton("Salir", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                int punt = Integer.parseInt(pjPuntuacion.getText().toString());
+                addPuntuacionBDD(punt);
                 System.exit(0);
             }
         });
@@ -68,9 +80,25 @@ public class PantallaJuego extends AppCompatActivity {
         dialog.show();
     }
 
+    private void inicio() {//dar inicio a los hilos
+        //obsH1 = new Hilo1();
+        //obsH1.start();
+    }
+
+    private void addPuntuacionBDD(int punt) {
+        ConexionBDD conn = new ConexionBDD(PantallaJuego.this, "bd_usuarios", null, 1);
+        SQLiteDatabase db = conn.getWritableDatabase();
+        db.execSQL("UPDATE " + tabla_usuarios + " SET " + campo_puntuacion + " = " + punt + " WHERE " + campo_userName + " = '" + pjUserName.getText().toString() + "'");
+        db.close();
+    }// --> Guarda la puntuacion en la base de datos
+
+
     private class AreaJuego extends View { // --> Clase que representa el área donde se encuentra el juego
         private Bolitas jugador;
         private Path pathJugador = new Path();
+        private Obstaculo obs;
+        private Path pathObs = new Path();//Declaré un path para el obstaculo
+        private int contadorHilo = 0;
         private int cantidadComida = 10; // --> Cantidad de comida predefinida dentro del area de juego
 
         private ListaComponente listaComida = new ListaComponente(); //Lista de Comida, para mantener el seguimiento y control de cada objeto
@@ -91,12 +119,14 @@ public class PantallaJuego extends AppCompatActivity {
                 listaComida.addBegin(new NodoComida(new Path()));
             }
             jugador = new Bolitas(35, 5);
+            obs = new Obstaculo(200, 200, 4, 400, 400);//No se como sea mejor hacerlos
         }
 
         public void onDraw(Canvas canvas) { //Se dibuja el canvas, se mantiene actualizándose continuamente
             super.onDraw(canvas);
             Paint paintFill = paintPropertiesFill();
             Paint paintStroke = paintPropertiesStroke();
+            Paint paintObs = paintPropertiesRect();
             canvasSizeX = canvas.getWidth();
             canvasSizeY = canvas.getHeight();
 
@@ -120,6 +150,7 @@ public class PantallaJuego extends AppCompatActivity {
                 jugador.setPosiX(xCalculada);
                 jugador.setPosiY(yCalculada);
                 pathJugador.addCircle(xCalculada, yCalculada, jugador.getSize(), Path.Direction.CCW);
+
                 startingState = true;
             }
 
@@ -171,17 +202,32 @@ public class PantallaJuego extends AppCompatActivity {
             canvas.drawPath(pathJugador, paintFill);
             canvas.drawPath(pathJugador, paintStroke);
 
+            if (contadorHilo < 2) {
+                // --> Se usa por que el canvas cambia de referencia de memoria 2 veces mientras se
+                // inicializa, de esta manera podemos controlarlo desde los hilos secundarios
+                obsH1 = new Hilo1(canvas, pathObs, paintObs);
+                if (contadorHilo == 1) {
+                    obsH1 = new Hilo1(canvas, pathObs, paintObs);
+                    obsH1.start();
+                }
+                contadorHilo++;
+            }
+
             invalidate();
         }
 
         public void verifyNodeEaten(ListaComponente listaComponente, Bolitas bolita) {
             int listaSize = listaComponente.size();
+            String punt;
             for (int i = 0; i < listaSize; i++) {
                 try {
                     if (listaComponente.getAt(i).isBetween(jugador.getPosiX() - 25, jugador.getPosiX() + 25,
                             jugador.getPosiY() - 25, jugador.getPosiY() + 25)) {
                         listaComponente.deleteAt(i);
                         listaSize--;
+                        puntuacion += listaComponente.getAt(i).getComida().getValue();
+                        punt = String.valueOf(puntuacion);
+                        pjPuntuacion.setText(punt);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -201,6 +247,18 @@ public class PantallaJuego extends AppCompatActivity {
                             listaComponente.getAt(0).getComida().getSize(), Path.Direction.CCW);
                 } catch (Exception e) {
                     e.printStackTrace();
+                }
+            } else if (listaSize <= 3) { // --> Evita que ocurra excepcion por no tener nodos en la lista
+                for (int i = 0; i < 5; i++) {
+                    listaComponente.addBegin(new NodoComida(new Path()));
+                    try {
+                        listaComponente.getAt(i).setPosiX((float) (Math.random() * (canvasSizeX)) + 1);
+                        listaComponente.getAt(i).setPosiY((float) (Math.random() * (canvasSizeY)) + 1);
+                        listaComponente.getAt(0).getPath().addCircle(listaComponente.getAt(i).getPosiX(), listaComponente.getAt(i).getPosiY(),
+                                listaComponente.getAt(0).getComida().getSize(), Path.Direction.CCW);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }// --> agrega comida de manera aleatoria al area de juego
@@ -233,6 +291,14 @@ public class PantallaJuego extends AppCompatActivity {
 
             return fillPaint;
         } // --> Propiedades de trazado de la comida
+
+        private Paint paintPropertiesRect() {
+            Paint fillPaint = new Paint();
+            fillPaint.setColor(obs.getColor());
+            fillPaint.setStyle(Paint.Style.FILL);
+
+            return fillPaint;
+        }// --> Propiedades de trazado de obstaculos
 
         public boolean onTouchEvent(MotionEvent evt) { // --> Revisa si se llevó a cabo un OnTouchEvent, para realizar acciones
             if (evt.getAction() == MotionEvent.ACTION_DOWN) {
@@ -267,6 +333,129 @@ public class PantallaJuego extends AppCompatActivity {
                     Thread.sleep(5000);
                     Toast.makeText(PantallaJuego.this, "AAAAAAAAH", Toast.LENGTH_SHORT).show();
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class Hilo1 extends Thread {
+        Canvas canvas;
+        Path obsPath;
+        Paint paint;
+
+        public Hilo1(Canvas canvas, Path obsPath, Paint paint) {
+            this.canvas = canvas;
+            this.obsPath = obsPath;
+            this.paint = paint;
+        }
+
+        @Override
+        public void run() {
+            int x = 5000;
+            /*do {
+                x = (int) (Math.random() * 10000) + 1;
+            } while (x < 2500);*/
+            try {
+                Thread.sleep(x);// Duerme aleatorioamente de entre 2500 a 10000 milis
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        randomRectX(obsPath);
+                        //obsH2 = new Hilo2();
+                        //obsH2.start();
+                    }
+                });
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void randomRectX(Path obsPath) { // --> Genera rectangulos en una de 3 posiciones
+            int randomPosi = (int) (Math.random() * 1) + 1; // --> Para determinar si aparecerá arriba, centro, abajo
+            int randomLado = (int) (Math.random() * 2) + 1; // --> 1 = De izq. a der. || 2 = De der. a izq.
+            float canvasSizeX = canvas.getWidth();
+            float canvasSizeY = canvas.getHeight();
+
+            float left, top, right, bottom;
+            switch (randomPosi) {
+                case 1:
+                    top = 0;
+                    bottom = canvasSizeY / 3;
+                    if (randomLado == 1) {
+                        left = -canvasSizeX / 3;
+                        right = 0;
+                        do { // --> Acerca el rectangulo a la zona de juego
+                            obsPath.reset();
+                            obsPath.addRect(left, top, right, bottom, Path.Direction.CW);
+                            canvas.drawPath(obsPath, paint);
+                            left += 0.1f;
+                            right += 0.1f;
+                        } while (right < canvasSizeX / 24);
+
+                        try {
+                            currentThread().sleep(3000); // --> El rectangulo espera 3 segundos
+                            do { // --> El rectangulo avanza hasta salir del canvas
+                                obsPath.reset();
+                                obsPath.addRect(left, top, right, bottom, Path.Direction.CW);
+                                canvas.drawPath(obsPath, paint);
+                                left++;
+                                right++;
+                            } while (left > canvasSizeX);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        left = canvasSizeX;
+                        right = (canvasSizeX / 3) + canvasSizeX;
+                        do {// --> Acerca el rectangulo a la zona de juego
+                            obsPath.reset();
+                            obsPath.addRect(left, top, right, bottom, Path.Direction.CW);
+                            canvas.drawPath(obsPath, paint);
+                            left -= 0.1f;
+                            right -= 0.1f;
+                        } while (left > (canvasSizeX - (canvasSizeX / 24)));
+
+                        try {
+                            currentThread().sleep(3000); // --> El rectangulo espera 3 segundos
+                            do { // --> El rectangulo avanza hasta salir del canvas
+                                obsPath.reset();
+                                obsPath.addRect(left, top, right, bottom, Path.Direction.CW);
+                                canvas.drawPath(obsPath, paint);
+                                left--;
+                                right--;
+                            } while (right < 0);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    break;
+                /////////
+                default:
+                    System.out.println("aaaaah");
+            }
+        }
+    }
+
+    private class Hilo2 extends Thread {
+        @Override
+        public void run() {
+            int x = 0;
+            do {
+                x = (int) (Math.random() * 10000) + 1;
+            } while (x < 2500);
+            try {
+                Thread.sleep(x);//Duerme aleatorioamente de entre 2500 a 10000 milis
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        obsBande = true;
+                        Toast.makeText(PantallaJuego.this, "Terminó hilo2, deberia aparecer rectangulo", Toast.LENGTH_SHORT).show();
+                        //obsH1 = new Hilo1();
+                        //obsH1.start();
+                    }
+                });
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

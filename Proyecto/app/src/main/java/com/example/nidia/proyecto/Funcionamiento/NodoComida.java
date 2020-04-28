@@ -10,19 +10,16 @@ public class NodoComida {
     //Tambien se utiliza para que los puntos tengan posiciones iniciales aleatorias
 
     private NodoComida siguiente;
-    private boolean dentroAreaJuego;
 
     public NodoComida() {
         this.siguiente = null;
         this.comida = null;
         this.comidaPath = null;
-        this.dentroAreaJuego = true;
     }
 
     public NodoComida(Path comidaPath) {
         this.comida = new Comida(15, (int) (Math.random() * 8));
         this.comidaPath = comidaPath;
-        this.dentroAreaJuego = true;
         this.siguiente = null;
     }
 
@@ -56,10 +53,6 @@ public class NodoComida {
 
     public void setPosiY(float posiY) {
         this.posiY = posiY;
-    }
-
-    public void setDentroAreaJuego(boolean dentroAreaJuego) {
-        this.dentroAreaJuego = dentroAreaJuego;
     }
 
     // --> Verifica si el punto del nodo se encuentra dentro del area del circulo, para que pueda "comerselo"
