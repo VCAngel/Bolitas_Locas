@@ -1,6 +1,6 @@
 package com.example.nidia.proyecto.Funcionamiento;
 
-public class ListaComponente {
+public class ListaComponente  {
     private NodoComida inicio;
     private NodoComida fin;
 

@@ -6,14 +6,22 @@
     android:layout_height="match_parent"
     tools:context=".Grafico.PantallaJuego">
 
-    <FrameLayout
+    <RelativeLayout
         android:id="@+id/pjCanvasJugador"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:background="@mipmap/pj_background">
+
+        <RelativeLayout
+            android:id="@+id/pjCanvasObstaculos"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
 
     <TableLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:stretchColumns="*"
         app:layout_constraintTop_toTopOf="parent">
 
