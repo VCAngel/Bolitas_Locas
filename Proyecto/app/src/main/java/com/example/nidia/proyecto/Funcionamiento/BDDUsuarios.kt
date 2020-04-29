@@ -6,6 +6,8 @@ class BDDUsuarios {
     private var cuenta: Char = ' '
     private var Pass: Char = ' '
     private var puntuacion: Int? = null
+    private var puntuacion2: Int? = null
+    private var puntuacion3: Int? = null
 
     fun BDDUsuarios(id: Int?, userName: String, cuenta: Char, pass: Char, puntuacion: Int?) {
         this.id = id
@@ -53,5 +55,19 @@ class BDDUsuarios {
 
     fun setPuntuacion(puntuacion: Int?) {
         this.puntuacion = puntuacion
+    }
+    fun getPuntuacion2(): Int? {
+        return puntuacion2
+    }
+
+    fun setPuntuacion2(puntuacion2: Int?) {
+        this.puntuacion2 = puntuacion2
+    }
+    fun getPuntuacion3(): Int? {
+        return puntuacion3
+    }
+
+    fun setPuntuacion3(puntuacion3: Int?) {
+        this.puntuacion3 = puntuacion3
     }
 }

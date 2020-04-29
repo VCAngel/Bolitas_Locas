@@ -8,22 +8,26 @@ class Comida {
             Color.MAGENTA, Color.RED, Color.YELLOW)
     private var color: Int = 0
     private var value: Int? = null
-    private var coordX: Int = 0
-    private var coordY: Int = 0
-    private var coordX2: Int = 0 //TODO Usar de alguna manera estos atributos
-    private var coordY2: Int = 0
-    private var coordX2ini: Int = 0
-    private var coordY2ini: Int = 0
+    private var posiX: Int = 0
+    private var posiY: Int = 0
 
-    constructor(size: Int, color: Int, coordX: Int, coordY: Int){ //--> Bolitas / Comida del jugador
+    constructor(size: Int, color: Int){ //--> Bolitas <--> Comida del jugador
         this.size = size
         if(color < 0 || color >= colorArray.size)
             this.color = Color.BLUE
         else
             this.color = colorArray[color]
 
-        this.coordX = coordX
-        this.coordY = coordY
+        when(color){
+            0 -> this.value = 3
+            1 -> this.value = 5
+            2 -> this.value = 7
+            3 -> this.value = 9
+            4 -> this.value = 11
+            5 -> this.value = 13
+            6 -> this.value = 15
+            else -> this.value = 3
+        }
     }
 
     fun setSize(size: Int){
@@ -50,45 +54,17 @@ class Comida {
         return color;
     }
 
-    fun setCoordX(coordX: Int){
-        this.coordX = coordX
+    fun setPosiX(posiX: Int){
+        this.posiX = posiX
     }
-    fun getCoordX():Int{
-        return coordX
-    }
-
-    fun setCoordY(coordY: Int){
-        this.coordX = coordX
-    }
-    fun getCoordY():Int{
-        return coordY
+    fun getPosiX():Int{
+        return posiX
     }
 
-    fun setCoordX2(coordX2: Int){
-        this.coordX2 = coordX2
+    fun setPosiY(posiY: Int){
+        this.posiY = posiY
     }
-    fun getCoordX2():Int{
-        return coordX2
-    }
-
-    fun setCoordY2(coordY2: Int){
-        this.coordX2 = coordX2
-    }
-    fun getCoordY2():Int{
-        return coordY2
-    }
-
-    fun setCoordX2ini(coordX2ini: Int){
-        this.coordX2ini = coordX2ini
-    }
-    fun getCoordX2ini():Int{
-        return coordX2ini
-    }
-
-    fun setCoordY2ini(coordY2ini: Int){
-        this.coordX2ini = coordX2ini
-    }
-    fun getCoordY2ini():Int{
-        return coordY2ini
+    fun getPosiY():Int{
+        return posiY
     }
 }

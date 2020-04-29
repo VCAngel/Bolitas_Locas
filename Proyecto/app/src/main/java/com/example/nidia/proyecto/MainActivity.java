@@ -19,6 +19,7 @@ import com.example.nidia.proyecto.Grafico.RegistroUsuarios;
 public class MainActivity extends Activity {
     EditText user, pass;
     Button mRegistrarse, mLogin;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,8 +48,8 @@ public class MainActivity extends Activity {
         }
     };
 
-    private void pressed(View view){
-        switch(view.getId()){
+    private void pressed(View view) {
+        switch (view.getId()) {
             case R.id.mRegistrarse:
                 Intent intent1 = new Intent(this, RegistroUsuarios.class);
                 startActivity(intent1);
