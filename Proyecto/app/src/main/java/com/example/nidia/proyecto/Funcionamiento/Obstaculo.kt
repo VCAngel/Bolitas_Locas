@@ -43,7 +43,7 @@ class Obstaculo {
     fun setTocable(tocable: Boolean){
         this.tocable = tocable
     }
-    fun getTocable():Boolean{
+    fun isTocable():Boolean{
         return tocable
     }
 }

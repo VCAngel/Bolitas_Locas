@@ -29,8 +29,9 @@ public class PantallaJuego extends AppCompatActivity {
     TextView pjUserName, pjPuntuacion;
     RelativeLayout pjCanvasJugador, pjCanvasObstaculos;
     Button pjSalir;
-    boolean obsBande = false, obsBandeM = false;// Para dibujar el obstaculo
-    private Thread t1;
+    private Thread t1, t2;
+    private Bolitas jugador;
+
     private HiloY obsH2;// para iniciar los hilos
     private int puntuacion = 0;
 
@@ -93,7 +94,6 @@ public class PantallaJuego extends AppCompatActivity {
 
 
     private class AreaJuego extends View { // --> Clase que representa el área donde se encuentra el juego
-        private Bolitas jugador;
         private Path pathJugador = new Path();
         private Obstaculo obs;
         private Path pathObs = new Path();//Declaré un path para el obstaculo
@@ -296,7 +296,6 @@ public class PantallaJuego extends AppCompatActivity {
         }
     }
 
-
     //TODO Hacer que funcione el Hilo secundario, no jalaaa aaaaaah
     private class ObstaculosThread extends View { // --> Clase encargada de la ejecucion secundaria de las Bolitas
         private Obstaculo obstaculo;
@@ -325,7 +324,7 @@ public class PantallaJuego extends AppCompatActivity {
             int canvasSizeY = getHeight();
             System.out.println(Thread.currentThread().getId()); //TODO PARA COMPROBAR EN QUE HILO ESTAMOS
 
-            if (!startingState) {
+            if (!startingState) { // --> Genera las posiciones iniciales de los obstaculos
                 obstaculosX[0] = new Obstaculo(0, 0, (canvasSizeX / 6) - 1, canvasSizeY);
                 obstaculosX[1] = new Obstaculo(canvasSizeX / 6, 0, (canvasSizeX / 3) - 1, canvasSizeY);
                 obstaculosX[2] = new Obstaculo(canvasSizeX / 3, 0, (canvasSizeX / 2) - 1, canvasSizeY);
@@ -343,12 +342,30 @@ public class PantallaJuego extends AppCompatActivity {
             if (contadorHilo < 2) {
                 // --> Se usa por que el canvas cambia de referencia de memoria 2 veces mientras se
                 // inicializa, de esta manera podemos controlarlo desde los hilos secundarios
-                t1 = new Thread(new HiloX(canvas, pathObsX, obstaculosX, paintObs));
+                t1 = new Thread(new HiloX(canvas, pathObsX, obstaculosX, paintObs, pathObsY, obstaculosY));
                 System.out.println(t1.getId());
                 if (contadorHilo == 1) {
                     t1.start();
                 }
                 contadorHilo++;
+            }
+
+            for (int i = 0; i < obstaculosY.length; i++) {
+                if (!obstaculosY[i].isTocable()) {
+                    if (jugador.isInside(obstaculosY[i].getLeft(), obstaculosY[i].getTop(), obstaculosY[i].getRight(), obstaculosY[i].getBottom())) {
+                        //TODO AQUI PONER EL DIALOG DE "PERDISTE"
+                        Toast.makeText(PantallaJuego.this, "OOOOOOOOOOOOOOOH", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            for (int i = 0; i < obstaculosX.length; i++) {
+                if (!obstaculosX[i].isTocable()) {
+                    if (jugador.isInside(obstaculosX[i].getLeft(), obstaculosX[i].getTop(), obstaculosX[i].getRight(), obstaculosX[i].getBottom())) {
+                        //TODO AQUI PONER EL DIALOG DE "PERDISTE"
+                        Toast.makeText(PantallaJuego.this, "AAAAAAAAAAAAAH", Toast.LENGTH_SHORT).show();
+                    }
+                }
             }
 
             invalidate();
@@ -365,16 +382,18 @@ public class PantallaJuego extends AppCompatActivity {
 
     private class HiloX implements Runnable {
         Canvas canvas;
-        Path[] pathObsX;
-        Obstaculo[] obstaculosX;
+        Path[] pathObsX, pathObsY;
+        Obstaculo[] obstaculosX, obstaculosY;
         Paint paint;
         int randomRect1, randomRect2;
 
-        public HiloX(Canvas canvas, Path[] pathObsX, Obstaculo[] obstaculosX, Paint paint) {
+        public HiloX(Canvas canvas, Path[] pathObsX, Obstaculo[] obstaculosX, Paint paint, Path[] pathobsY, Obstaculo[] obstaculosY) {
             this.canvas = canvas;
             this.pathObsX = pathObsX;
             this.paint = paint;
             this.obstaculosX = obstaculosX;
+            this.pathObsY = pathobsY;
+            this.obstaculosY = obstaculosY;
         }
 
         @Override
@@ -384,30 +403,27 @@ public class PantallaJuego extends AppCompatActivity {
                 randomRect2 = (int) (Math.random() * 6);
             } while (randomRect1 == randomRect2);
             try {
-                t1.sleep(3000);
+                t1.sleep(1000);
                 System.out.println(t1.isAlive());
                 randomRectX(pathObsX[randomRect1], pathObsX[randomRect2], obstaculosX[randomRect1], obstaculosX[randomRect2]);
+                t1.sleep(1000);
+                obstaculosX[randomRect1].setTocable(true);
+                obstaculosX[randomRect2].setTocable(true);
                 runOnUiThread(new Runnable() { // --> Corre cuando el hilo esta muerto
                     @Override
                     public void run() {
-                        //obsH2 = new Hilo2();
-                        //obsH2.start();
+                        t2 = new Thread(new HiloY(canvas, pathObsY, obstaculosY, paint, pathObsX, obstaculosX));
+                        t2.start();
                     }
                 });
             } catch (Exception e) {
             }
         }
 
-        private void randomRectX(Path pathObsX1, Path pathObsX2, Obstaculo obsX1, Obstaculo obsX2) { // --> Genera rectangulos en una de 6 posiciones
+        private void randomRectX(Path pathObsX1, Path pathObsX2, Obstaculo obsX1, Obstaculo obsX2) { // --> Genera rectangulosX en una de 6 posiciones
             pathObsX1.addRect(obsX1.getLeft(), obsX1.getTop(), obsX1.getRight(), obsX1.getBottom(), Path.Direction.CCW);
             pathObsX2.addRect(obsX2.getLeft(), obsX2.getTop(), obsX2.getRight(), obsX2.getBottom(), Path.Direction.CCW);
             try {
-                paint.setColor(getResources().getColor(R.color.transparencia1));
-                canvas.drawPath(pathObsX1, paint);
-                canvas.drawPath(pathObsX2, paint);
-                System.out.println(t1.getId());
-                System.out.println(t1.isAlive());
-                t1.sleep(1000);
                 paint.setColor(getResources().getColor(R.color.transparencia2));
                 canvas.drawPath(pathObsX1, paint);
                 canvas.drawPath(pathObsX2, paint);
@@ -415,35 +431,72 @@ public class PantallaJuego extends AppCompatActivity {
                 paint.setColor(getResources().getColor(R.color.relleno));
                 canvas.drawPath(pathObsX1, paint);
                 canvas.drawPath(pathObsX2, paint);
+                obstaculosX[randomRect1].setTocable(false);
+                obstaculosX[randomRect2].setTocable(false);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            obsX1.setTocable(false);
-            obsX2.setTocable(false);
         }
     }
 
-    private class HiloY extends Thread {
+    private class HiloY implements Runnable {
+
+        Canvas canvas;
+        Path[] pathObsY, pathObsX;
+        Obstaculo[] obstaculosY, obstaculosX;
+        Paint paint;
+        int randomRect1, randomRect2;
+
+        public HiloY(Canvas canvas, Path[] pathObsY, Obstaculo[] obstaculosY, Paint paint, Path[] pathObsX, Obstaculo[] obstaculosX) {
+            this.canvas = canvas;
+            this.pathObsY = pathObsY;
+            this.paint = paint;
+            this.obstaculosY = obstaculosY;
+            this.obstaculosX = obstaculosX;
+            this.pathObsX = pathObsX;
+        }
+
         @Override
         public void run() {
-            int x = 0;
             do {
-                x = (int) (Math.random() * 10000) + 1;
-            } while (x < 2500);
+                randomRect1 = (int) (Math.random() * 3);
+                randomRect2 = (int) (Math.random() * 3);
+            } while (randomRect1 == randomRect2);
             try {
-                Thread.sleep(x);//Duerme aleatorioamente de entre 2500 a 10000 milis
-                runOnUiThread(new Runnable() {
+                t2.sleep(1000);
+                randomRectY(pathObsY[randomRect1], pathObsY[randomRect2], obstaculosY[randomRect1], obstaculosY[randomRect2]);
+                t2.sleep(1000);
+                obstaculosY[randomRect1].setTocable(true);
+                obstaculosY[randomRect2].setTocable(true);
+                runOnUiThread(new Runnable() { // --> Corre cuando el hilo esta muerto
                     @Override
                     public void run() {
-                        obsBande = true;
-                        Toast.makeText(PantallaJuego.this, "Terminó hilo2, deberia aparecer rectangulo", Toast.LENGTH_SHORT).show();
-                        //obsH1 = new Hilo1();
-                        //obsH1.start();
+                        t1 = new Thread(new HiloX(canvas, pathObsX, obstaculosX, paint, pathObsY, obstaculosY));
+                        t1.start();
                     }
                 });
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
+            }
+        }
+
+        private void randomRectY(Path pathObsY1, Path pathObsY2, Obstaculo obsY1, Obstaculo obsY2) { // --> Genera rectangulos en una de 3 posiciones
+            pathObsY1.addRect(obsY1.getLeft(), obsY1.getTop(), obsY1.getRight(), obsY1.getBottom(), Path.Direction.CCW);
+            pathObsY2.addRect(obsY2.getLeft(), obsY2.getTop(), obsY2.getRight(), obsY2.getBottom(), Path.Direction.CCW);
+            try {
+                paint.setColor(getResources().getColor(R.color.transparencia2));
+                canvas.drawPath(pathObsY1, paint);
+                canvas.drawPath(pathObsY2, paint);
+                t2.sleep(1000);
+                paint.setColor(getResources().getColor(R.color.relleno));
+                canvas.drawPath(pathObsY1, paint);
+                canvas.drawPath(pathObsY2, paint);
+                obsY1.setTocable(false);
+                obsY2.setTocable(false);
+            } catch (Exception e) {
                 e.printStackTrace();
             }
+            obsY1.setTocable(false);
+            obsY2.setTocable(false);
         }
     }
 }
