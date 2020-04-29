@@ -1,18 +1,12 @@
 package com.example.nidia.proyecto.Grafico;
 
-<<<<<<< HEAD
-import android.content.DialogInterface;
-import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
-=======
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
@@ -20,68 +14,42 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.FrameLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.example.nidia.proyecto.ConexionBDD;
 import com.example.nidia.proyecto.Funcionamiento.*;
->>>>>>> master
 
 import com.example.nidia.proyecto.R;
+import com.example.nidia.proyecto.UtilidadesBDD.Utilidades;
+
+import static com.example.nidia.proyecto.UtilidadesBDD.Utilidades.*;
 
 public class PantallaJuego extends AppCompatActivity {
-    TextView pjUserName, pjPuntuacion;
-<<<<<<< HEAD
+    TextView pjUserName, pjPuntuacion, pjPuntuacionM;
+    RelativeLayout pjCanvasJugador, pjCanvasObstaculos;
     Button pjSalir;
-=======
-    FrameLayout pjCanvas;
-    Button pjSalir;
-    boolean obsBande = false, obsBandeM = false;// Para dibujar el obstaculo
-    private Hilo1 obsH1;
-    private Hilo2 obsH2;// para iniciar los hilos
-    //HideVisibilityStyle estilo;  //TODO Falta ocultar la barra de tareas y de acciones
+    private Thread t1, t2;
+    private Bolitas jugador;
+    private HiloY obsH2;// para iniciar los hilos
+    private int puntuacion = 0;
+    AlertDialog.Builder dialog = new AlertDialog.Builder(this);
 
->>>>>>> master
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         setContentView(R.layout.activity_pantalla_juego);
         pjUserName = findViewById(R.id.pjUser);
         pjPuntuacion = findViewById(R.id.pjPuntuacion);
+        pjPuntuacionM = findViewById(R.id.pjPuntuacionM);
         pjSalir = findViewById(R.id.pjSalir);
-<<<<<<< HEAD
-
-        pjSalir.setOnClickListener(onClickListener);
-
-        String pjrUser = getIntent().getStringExtra("pjrUser");
-        String pjrPuntuacion = getIntent().getStringExtra("pjrPuntuacion");
-        pjUserName.setText(pjrUser);
-        pjPuntuacion.setText(pjrPuntuacion);
-        Toast.makeText(this, pjrPuntuacion, Toast.LENGTH_SHORT).show();
-    }
-    View.OnClickListener onClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            pressed(view);
-        }
-    };
-    private void pressed(View view){
-        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-        dialog.setTitle("Importante");
-        dialog.setMessage("¿Seguro que desea salir de este juego?");
-        dialog.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                System.exit(0);
-            }
-        });
-        dialog.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                dialog.dismiss();
-            }
-        });
-        dialog.show();
-=======
-        pjCanvas = findViewById(R.id.pjCanvas);
+        pjCanvasJugador = findViewById(R.id.pjCanvasJugador);
+        pjCanvasObstaculos = findViewById(R.id.pjCanvasObstaculos);
         //estilo = new HideVisibilityStyle(this);
 
         pjSalir.setOnClickListener(onClickListener);
@@ -90,12 +58,8 @@ public class PantallaJuego extends AppCompatActivity {
         String pjrPuntuacion = getIntent().getStringExtra("pjrPuntuacion");
         pjUserName.setText(pjrUser);
         pjPuntuacion.setText(pjrPuntuacion);
-<<<<<<< Updated upstream
-        pjCanvas.addView(new AreaJuego(this));
-=======
         pjCanvasJugador.addView(new AreaJuego(this));
-        inicio();// método que inicia los hilos
->>>>>>> Stashed changes
+        pjCanvasObstaculos.addView(new ObstaculosThread(this));
     }
 
     View.OnClickListener onClickListener = new View.OnClickListener() {
@@ -106,11 +70,19 @@ public class PantallaJuego extends AppCompatActivity {
     };
 
     private void exit(View view) {
-        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Importante");
         dialog.setMessage("¿Desea salir de este juego?");
         dialog.setPositiveButton("Salir", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                int punt = Integer.parseInt(pjPuntuacionM.getText().toString());
+                int punt1, mayor=0;
+                punt1 = Integer.parseInt(pjPuntuacion.getText().toString());
+                if(punt1>punt){
+                    mayor = punt1;
+                }else if(punt>punt1){
+                    mayor=punt;
+                }
+                addPuntuacionBDD(mayor);
                 System.exit(0);
             }
         });
@@ -121,110 +93,178 @@ public class PantallaJuego extends AppCompatActivity {
         });
         dialog.show();
     }
-    private void inicio(){//dar inicio a los hilos
-        obsH1 = new Hilo1();
-        obsH1.start();
-    }
+
+    private void addPuntuacionBDD(int punt) {
+        ConexionBDD conn = new ConexionBDD(PantallaJuego.this, "bd_usuarios", null, 1);
+        SQLiteDatabase db = conn.getWritableDatabase();
+        db.execSQL("UPDATE " + tabla_usuarios + " SET " + campo_puntuacion + " = " + punt + " WHERE " + campo_userName + " = '" + pjUserName.getText().toString() + "'");
+        db.close();
+    }// --> Guarda la puntuacion en la base de datos
+
 
     private class AreaJuego extends View { // --> Clase que representa el área donde se encuentra el juego
-        private Bolitas jugador;
-<<<<<<< Updated upstream
-=======
         private Path pathJugador = new Path();
         private Obstaculo obs;
         private Path pathObs = new Path();//Declaré un path para el obstaculo
+        private int contadorHilo = 0;
         private int cantidadComida = 10; // --> Cantidad de comida predefinida dentro del area de juego
->>>>>>> Stashed changes
 
-        private Comida[] comida = new Comida[100]; //Cantidad de comida en el juego -->
-        //El arreglo anterior es temporal, solo para mostrar el funcionamiento, se usarán Listas
-        //TODO Cesar! Aquí es donde se instanciarán las listas de Bolitas y Comida, las clases están
-        // en la carpeta de .Funcionamiento, solo falta hacer las clases de las listas, wapo
+        private ListaComponente listaComida = new ListaComponente(); //Lista de Comida, para mantener el seguimiento y control de cada objeto
 
         private String action = ""; //Accion realizada en el canvas
-        private float xCalculada = 0, yCalculada = 0; //Coordenadas calculadas de la comida
+
+        private float xCalculada = 0, yCalculada = 0; //Coordenadas calculadas del jugador
         private float x2 = 0, y2 = 0; //Punto hacia donde se arrastra la pantalla
         private float x2ini = 0, y2ini = 0; //Punto donde se presiona la pantalla inicialmente
-        private float[] posiX = new float[comida.length], posiY = new float[comida.length]; //Adicion que se le hace a x/yCalculada
+        private float canvasSizeX = 0, canvasSizeY = 0;
+
         private boolean startingState = false;// Estado inicial del juego
 
-        private Path pathJugador = new Path();
-        private Path[] pathComida = new Path[comida.length];
-
-        public AreaJuego(Context context) { // --> Constructor inicla de la clase
+        public AreaJuego(Context context) { // --> Constructor inicia de la clase
             super(context);
-            for(int i = 0; i < comida.length; i++){
-                comida[i] = new Comida(10, (int)(Math.random()*8), 0,0);
-                pathComida[i] = new Path();
+
+            for (int i = 0; i < cantidadComida; i++) {
+                listaComida.addBegin(new NodoComida(new Path()));
             }
-<<<<<<< Updated upstream
-            jugador = new Bolitas(30,5,0);
-=======
-            jugador = new Bolitas(35, 5);
-            obs = new Obstaculo(0,0,4,200,200);//No se si es mejor hacerlo con arreglos
->>>>>>> Stashed changes
+            jugador = new Bolitas(35, Color.WHITE);
+            obs = new Obstaculo(200, 200, 400, 400);//No se como sea mejor hacerlos
         }
 
         public void onDraw(Canvas canvas) { //Se dibuja el canvas, se mantiene actualizándose continuamente
-            Paint paint = paintProperties();
+            super.onDraw(canvas);
+            Paint paintFill = paintPropertiesFill();
+            Paint paintStroke = paintPropertiesStroke();
+            canvasSizeX = canvas.getWidth();
+            canvasSizeY = canvas.getHeight();
 
-            if (action == "move") {
+            if (!startingState) { //Estado Inicial del juego
+                for (int i = 0; i < listaComida.size(); i++) {
+                    try {
+                        listaComida.getAt(i).setPosiX((float) (Math.random() * (canvasSizeX)) + 1);
+                        listaComida.getAt(i).setPosiY((float) (Math.random() * (canvasSizeY)) + 1);
+                        listaComida.getAt(i).getPath().addCircle(listaComida.getAt(i).getPosiX(), listaComida.getAt(i).getPosiY(),
+                                listaComida.getAt(i).getComida().getSize(), Path.Direction.CCW);
+
+                        canvas.drawPath(listaComida.getAt(i).getPath(), paintProperties(i));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                xCalculada = canvasSizeX / 2;
+                yCalculada = canvasSizeY / 2;
+
+                jugador.setPosiX(xCalculada);
+                jugador.setPosiY(yCalculada);
+                pathJugador.addCircle(xCalculada, yCalculada, jugador.getSize(), Path.Direction.CCW);
+
+                startingState = true;
+            }
+
+            if (action.equals("move")) {
+                /*
+                Aqui se evalua el estado del MotionEvent sobre el Canvas, una vez evaluado se hacen los calculos necesarios
+                para manejar el posicionamiento del jugador
+                 */
                 float pixelesX = x2ini - x2;
                 float pixelesY = y2ini - y2;
 
-                xCalculada -= pixelesX;
-                yCalculada -= pixelesY;
+                // vvv Para mantener al jugador dentro del area de la pantalla vvv
+                if (jugador.getPosiX() >= canvasSizeX) {
+                    xCalculada = canvasSizeX - 0.1f;
+                } else if (jugador.getPosiX() <= 0) {
+                    xCalculada = 0.1f;
+                } else {
+                    xCalculada -= pixelesX;
+                }
+
+                if (jugador.getPosiY() >= canvasSizeY) {
+                    yCalculada = canvasSizeY - 0.1f;
+                } else if (jugador.getPosiY() <= 0) {
+                    yCalculada = 0.1f;
+                } else {
+                    yCalculada -= pixelesY;
+                }
+                // ^^^ - - - - - - - - - - - - - - - - - - - - - - - - - - - ^^^
+
                 x2ini = x2;
                 y2ini = y2;
 
-                for (int i = 0; i < comida.length; i++) {
-                    pathComida[i].reset();
-                    pathComida[i].addCircle(xCalculada+posiX[i], yCalculada+posiY[i],
-                                                comida[i].getSize(), Path.Direction.CCW);
-                }
-                /*
+                jugador.setPosiX(xCalculada);
+                jugador.setPosiY(yCalculada);
                 pathJugador.reset();
-                pathJugador.addCircle(x, y, jugador.getSize(), Path.Direction.CCW);
-                 */
+                pathJugador.addCircle(xCalculada, yCalculada, jugador.getSize(), Path.Direction.CCW);
             }
 
-            if (startingState == false) { //Estado Inicial del juego
-                for (int i = 0; i < comida.length; i++){
-                    posiX[i] = (float)(Math.random()*(canvas.getWidth()*10))+1;
-                    posiY[i] = (float)(Math.random()*(canvas.getHeight()*10))+1;
-                    pathComida[i].addCircle(posiX[i],posiY[i], comida[i].getSize(), Path.Direction.CCW);
-                    canvas.drawPath(pathComida[i], paintProperties(i));
+            verifyNodeEaten(listaComida, jugador);
+            addComidaRandom(listaComida);
+
+            for (int i = 0; i < listaComida.size(); i++) {
+                try {
+                    canvas.drawPath(listaComida.getAt(i).getPath(), paintProperties(i));
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                pathJugador.addCircle(canvas.getWidth()/2, canvas.getHeight()/2, jugador.getSize(), Path.Direction.CCW);
-                canvas.drawPath(pathJugador, paint);
-                startingState = true;
             }
-<<<<<<< Updated upstream
-=======
             canvas.drawPath(pathJugador, paintFill);
             canvas.drawPath(pathJugador, paintStroke);
-            if(obsBande){// se dibuja rectangulo cuando el hilo lo ermite (Creo que no funciona)
-                pathObs.addRect(obs.getLeft()+1, obs.getTop()+1, obs.getRight()+1, obs.getBottom()+1, Path.Direction.CCW);
-                canvas.drawPath(pathObs, paintPropertiesO());
-                //Esto solo dibuja un rectangulo, pero no lo mueve ni nada aun
-                obsBande = false;
-            }
->>>>>>> Stashed changes
 
-            for (int i = 0; i < comida.length; i++)
-                canvas.drawPath(pathComida[i], paintProperties(i));
-            canvas.drawPath(pathJugador, paint);
+            invalidate();
         }
 
-        private Paint paintProperties() {
+        public void verifyNodeEaten(ListaComponente listaComponente, Bolitas bolita) {
+            int listaSize = listaComponente.size();
+            String punt;
+            for (int i = 0; i < listaSize; i++) {
+                try {
+                    if (listaComponente.getAt(i).isBetween(jugador.getPosiX() - 25, jugador.getPosiX() + 25,
+                            jugador.getPosiY() - 25, jugador.getPosiY() + 25)) {
+                        listaComponente.deleteAt(i);
+                        listaSize--;
+                        puntuacion += listaComponente.getAt(i).getComida().getValue();
+                        punt = String.valueOf(puntuacion);
+                        pjPuntuacionM.setText(punt);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }// --> Comprueba si un nodo se encuentra en la misma posicion que el jugador
+
+        private void addComidaRandom(ListaComponente listaComponente) {
+            int listaSize = listaComponente.size();
+            int randomNum = (int) (Math.random() * 50) + 1;
+            if (randomNum == 1) {
+                listaComponente.addBegin(new NodoComida(new Path()));
+                try {
+                    listaComponente.getAt(0).setPosiX((float) (Math.random() * (canvasSizeX)) + 1);
+                    listaComponente.getAt(0).setPosiY((float) (Math.random() * (canvasSizeY)) + 1);
+                    listaComponente.getAt(0).getPath().addCircle(listaComponente.getAt(0).getPosiX(), listaComponente.getAt(0).getPosiY(),
+                            listaComponente.getAt(0).getComida().getSize(), Path.Direction.CCW);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else if (listaSize <= 3) { // --> Evita que ocurra excepcion por no tener nodos en la lista
+                for (int i = 0; i < 5; i++) {
+                    listaComponente.addBegin(new NodoComida(new Path()));
+                    try {
+                        listaComponente.getAt(i).setPosiX((float) (Math.random() * (canvasSizeX)) + 1);
+                        listaComponente.getAt(i).setPosiY((float) (Math.random() * (canvasSizeY)) + 1);
+                        listaComponente.getAt(0).getPath().addCircle(listaComponente.getAt(i).getPosiX(), listaComponente.getAt(i).getPosiY(),
+                                listaComponente.getAt(0).getComida().getSize(), Path.Direction.CCW);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }// --> agrega comida de manera aleatoria al area de juego
+
+        private Paint paintPropertiesFill() {
             Paint fillPaint = new Paint();
             fillPaint.setColor(jugador.getColor());
             fillPaint.setStyle(Paint.Style.FILL);
 
             return fillPaint;
-<<<<<<< Updated upstream
-        } // --> Propiedades de trazado de las bolitas
-=======
         } // --> Propiedades de relleno de la bolita del jugador
 
         private Paint paintPropertiesStroke() {
@@ -235,18 +275,14 @@ public class PantallaJuego extends AppCompatActivity {
 
             return strokePaint;
         }// --> Propiedades de delineado de la bolita del jugador
-        private Paint paintPropertiesO() {
-            Paint fillPaint = new Paint();
-            fillPaint.setColor(obs.getColor());
-            fillPaint.setStyle(Paint.Style.FILL);
 
-            return fillPaint;
-        }// --> Propiedades de trazado de obstaculos
-
->>>>>>> Stashed changes
         private Paint paintProperties(int value) {
             Paint fillPaint = new Paint();
-            fillPaint.setColor(comida[value].getColor());
+            try {
+                fillPaint.setColor(listaComida.getAt(value).getComida().getColor());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             fillPaint.setStyle(Paint.Style.FILL);
 
             return fillPaint;
@@ -256,87 +292,267 @@ public class PantallaJuego extends AppCompatActivity {
             if (evt.getAction() == MotionEvent.ACTION_DOWN) {
                 x2ini = evt.getX();
                 y2ini = evt.getY();
+                invalidate();
             }
             x2 = evt.getX();
             y2 = evt.getY();
-            if (evt.getAction() == MotionEvent.ACTION_MOVE)
-                action = "move";
 
-            invalidate();
+            if (evt.getAction() == MotionEvent.ACTION_MOVE) {
+                action = "move";
+                invalidate();
+            }
             return true;
         }
->>>>>>> master
     }
 
-<<<<<<< Updated upstream
-=======
 
     //TODO Hacer que funcione el Hilo secundario, no jalaaa aaaaaah
-    private class BolitasThread implements Runnable { // --> Clase encargada de la ejecucion seucndaria de las Bolitas
-        private Canvas canvas;
+    private class ObstaculosThread extends View { // --> Clase encargada de la ejecucion secundaria de las Bolitas
+        private Obstaculo obstaculo;
+        private Obstaculo[] obstaculosX = new Obstaculo[6]; //Arreglo de obstaculos en el eje X
+        private Obstaculo[] obstaculosY = new Obstaculo[3]; //Arreglo de obstaculos en el eje Y
+        private Path[] pathObsX = new Path[6];
+        private Path[] pathObsY = new Path[3];
+        private int contadorHilo = 0;
+        private boolean startingState = false;
 
-        public BolitasThread(Canvas canvas) {
-            this.canvas = canvas;
-        }
-
-        @Override
-        public void run() {
-            try {
-                for (int i = 0; i <= 10; i++) {
-                    Thread.sleep(5000);
-                    Toast.makeText(PantallaJuego.this, "AAAAAAAAH", Toast.LENGTH_SHORT).show();
+        public ObstaculosThread(Context context) {
+            super(context);
+            for (int i = 0; i < pathObsX.length; i++) {
+                pathObsX[i] = new Path();
+                if (i < pathObsY.length) {
+                    pathObsY[i] = new Path();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
-    }
-    private class Hilo1 extends Thread{
-        @Override
-        public void run() {
-            int x = 0;
-            do{
-                x = (int)(Math.random()*10000)+1;
-            }while(x<2500);
-            try {
-                Thread.sleep(x);// Duerme aleatorioamente de entre 2500 a 10000 milis
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        obsBande = true;// Permitir que se dibuje el rectangulo en onDraw
-                        Toast.makeText(PantallaJuego.this, "Terminó hilo1, deberia aparecer rectangulo", Toast.LENGTH_SHORT).show();
-                        obsH2 = new Hilo2();
-                        obsH2.start();
-                    }
-                });
-            }catch (InterruptedException e){
-                e.printStackTrace();
-            }
-        }
-    }
-    private class Hilo2 extends Thread{
-        @Override
-        public void run() {
-            int x = 0;
-            do{
-                x = (int)(Math.random()*10000)+1;
-            }while(x<2500);
-            try {
-                Thread.sleep(x);//Duerme aleatorioamente de entre 2500 a 10000 milis
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        obsBande = true;
-                        Toast.makeText(PantallaJuego.this, "Terminó hilo2, deberia aparecer rectangulo", Toast.LENGTH_SHORT).show();
-                        obsH1 = new Hilo1();
-                        obsH1.start();
-                    }
-                });
-            }catch (InterruptedException e){
-                e.printStackTrace();
-            }
-        }
-    }
->>>>>>> Stashed changes
-}
 
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            Paint paintObs = paintPropertiesRect();
+            int canvasSizeX = getWidth();
+            int canvasSizeY = getHeight();
+            System.out.println(Thread.currentThread().getId()); //TODO PARA COMPROBAR EN QUE HILO ESTAMOS
+            if (!startingState) {
+                obstaculosX[0] = new Obstaculo(0, 0, (canvasSizeX / 6) - 1, canvasSizeY);
+                obstaculosX[1] = new Obstaculo(canvasSizeX / 6, 0, (canvasSizeX / 3) - 1, canvasSizeY);
+                obstaculosX[2] = new Obstaculo(canvasSizeX / 3, 0, (canvasSizeX / 2) - 1, canvasSizeY);
+                obstaculosX[3] = new Obstaculo(canvasSizeX / 2, 0, ((canvasSizeX * 2) / 3) - 1, canvasSizeY);
+                obstaculosX[4] = new Obstaculo((canvasSizeX * 2) / 3, 0, ((canvasSizeX * 5) / 6) - 1, canvasSizeY);
+                obstaculosX[5] = new Obstaculo((canvasSizeX * 5) / 6, 0, canvasSizeX, canvasSizeY);
+
+                obstaculosY[0] = new Obstaculo(0, 0, canvasSizeX, (canvasSizeY / 3) - 1);
+                obstaculosY[1] = new Obstaculo(0, canvasSizeY / 3, canvasSizeX, ((canvasSizeY * 2) / 3) - 1);
+                obstaculosY[2] = new Obstaculo(0, (canvasSizeY * 2) / 3, canvasSizeX, canvasSizeY);
+
+                startingState = true;
+            }
+
+            if (contadorHilo < 2) {
+                // --> Se usa por que el canvas cambia de referencia de memoria 2 veces mientras se
+                // inicializa, de esta manera podemos controlarlo desde los hilos secundarios
+                t1 = new Thread(new HiloX(canvas, pathObsX, obstaculosX, paintObs,pathObsY,obstaculosY));
+
+                System.out.println(t1.getId());
+                if (contadorHilo == 1) {
+                    t1.start();
+
+                }
+                contadorHilo++;
+            }
+            for (int i = 0; i < obstaculosY.length; i++) {
+                if (!obstaculosY[i].isTocable()) {
+                    if (jugador.isInside(obstaculosY[i].getLeft(), obstaculosY[i].getTop(), obstaculosY[i].getRight(), obstaculosY[i].getBottom())) {
+                        //TODO AQUI PONER EL DIALOG DE "PERDISTE"
+                        Toast.makeText(PantallaJuego.this, "OOOOOOOOOOOOOOOH", Toast.LENGTH_SHORT).show();
+                        perdiste();
+                    }
+                }
+            }
+
+            for (int i = 0; i < obstaculosX.length; i++) {
+                if (!obstaculosX[i].isTocable()) {
+                    if (jugador.isInside(obstaculosX[i].getLeft(), obstaculosX[i].getTop(), obstaculosX[i].getRight(), obstaculosX[i].getBottom())) {
+                        //TODO AQUI PONER EL DIALOG DE "PERDISTE"
+                        Toast.makeText(PantallaJuego.this, "AAAAAAAAAAAAAH", Toast.LENGTH_SHORT).show();
+                        perdiste();
+                    }
+                }
+            }
+
+            invalidate();
+        }
+        private void perdiste(){
+            dialog.setTitle("");
+            dialog.setMessage("Game Over");
+            dialog.setPositiveButton("Salir", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    int punt = Integer.parseInt(pjPuntuacionM.getText().toString());
+                    int punt1, mayor=0;
+                    punt1 = Integer.parseInt(pjPuntuacion.getText().toString());
+                    if(punt1>punt){
+                        mayor = punt1;
+                    }else if(punt>punt1){
+                        mayor=punt;
+                    }
+                    addPuntuacionBDD(mayor);
+                    System.exit(0);
+                }
+            });
+            dialog.setNegativeButton("Volver al Juego", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    Intent intent = getIntent();
+                    finish();
+                    startActivity(intent);
+                    dialog.dismiss();
+                }
+            });
+            dialog.show();
+        } // --> lanza un dialog para cuando pierdes
+
+        private Paint paintPropertiesRect() {
+            Paint fillPaint = new Paint();
+            fillPaint.setStyle(Paint.Style.FILL);
+
+            return fillPaint;
+        }// --> Propiedades de trazado de obstaculos
+
+    }
+
+    private class HiloX implements Runnable {
+        Canvas canvas;
+        Path[] pathObsX,pathObsY;
+        Obstaculo[] obstaculosX,obstaculosY;
+        Paint paint;
+        int randomRect1, randomRect2;
+
+        public HiloX(Canvas canvas, Path[] pathObsX, Obstaculo[] obstaculosX, Paint paint,Path[] pathobsY, Obstaculo[] obstaculosY) {
+            this.canvas = canvas;
+            this.pathObsX = pathObsX;
+            this.paint = paint;
+            this.obstaculosX = obstaculosX;
+            this.pathObsY =pathobsY;
+            this.obstaculosY= obstaculosY;
+        }
+
+        @Override
+        public void run() {
+            do {
+                randomRect1 = (int) (Math.random() * 6);
+                randomRect2 = (int) (Math.random() * 6);
+            } while (randomRect1 == randomRect2);
+            int x = 0;
+            do{
+                x = (int)(Math.random()*10000)+1;
+            }while(x<2500);
+            try {
+                t1.sleep(x);
+                System.out.println(t1.isAlive());
+                randomRectX(pathObsX[randomRect1], pathObsX[randomRect2], obstaculosX[randomRect1], obstaculosX[randomRect2]);
+                runOnUiThread(new Runnable() { // --> Corre cuando el hilo esta muerto
+                    @Override
+                    public void run() {
+                        t2 = new Thread(new HiloY(canvas,pathObsY,obstaculosY,paint,pathObsX,obstaculosX));
+                        t2.start();
+                    }
+                });
+            } catch (Exception e) {
+            }
+        }
+
+        private void randomRectX(Path pathObsX1, Path pathObsX2, Obstaculo obsX1, Obstaculo obsX2) { // --> Genera rectangulos en una de 6 posiciones
+            pathObsX1.addRect(obsX1.getLeft(), obsX1.getTop(), obsX1.getRight(), obsX1.getBottom(), Path.Direction.CCW);
+            pathObsX2.addRect(obsX2.getLeft(), obsX2.getTop(), obsX2.getRight(), obsX2.getBottom(), Path.Direction.CCW);
+            try {
+                paint.setColor(getResources().getColor(R.color.transparencia1));
+                canvas.drawPath(pathObsX1, paint);
+                canvas.drawPath(pathObsX2, paint);
+                System.out.println(t1.getId());
+                System.out.println(t1.isAlive());
+                t1.sleep(10000);
+                paint.setColor(getResources().getColor(R.color.transparencia2));
+                canvas.drawPath(pathObsX1, paint);
+                canvas.drawPath(pathObsX2, paint);
+                t1.sleep(10000);
+                paint.setColor(getResources().getColor(R.color.relleno));
+                canvas.drawPath(pathObsX1, paint);
+                canvas.drawPath(pathObsX2, paint);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            obsX1.setTocable(false);
+            obsX2.setTocable(false);
+        }
+
+
+            // --> Se usa por que el canvas cambia de referencia de memoria 2 veces mientras se
+            // inicializa, de esta manera podemos controlarlo desde los hilos secundarios
+
+
+
+
+
+    }
+
+
+    private class HiloY implements Runnable {
+
+        Canvas canvas;
+        Path[] pathObsY,pathObsX;
+        Obstaculo[] obstaculosY,obstaculosX;
+        Paint paint;
+        int randomRect1, randomRect2;
+        public HiloY(Canvas canvas, Path[] pathObsY, Obstaculo[] obstaculosY, Paint paint,Path[] pathObsX,Obstaculo[] obstaculosX) {
+            this.canvas = canvas;
+            this.pathObsY = pathObsY;
+            this.paint = paint;
+            this.obstaculosY = obstaculosY;
+            this.obstaculosX=obstaculosX;
+            this.pathObsX=pathObsX;
+        }
+        @Override
+        public void run() {
+            do {
+                randomRect1 = (int) (Math.random() * 3);
+                randomRect2 = (int) (Math.random() * 3);
+            } while (randomRect1 == randomRect2);
+            int x = 0;
+            do{
+                x = (int)(Math.random()*5000)+1;
+            }while(x<2500);
+            try {
+                t2.sleep(x);
+                randomRectY(pathObsY[randomRect1], pathObsY[randomRect2], obstaculosY[randomRect1], obstaculosY[randomRect2]);
+                runOnUiThread(new Runnable() { // --> Corre cuando el hilo esta muerto
+                    @Override
+                    public void run() {
+                        t1 = new Thread(new HiloX(canvas,pathObsX,obstaculosX,paint,pathObsY,obstaculosY));
+                        t1.start();
+                    }
+                });
+            } catch (Exception e) {
+            }
+        }
+        private void randomRectY(Path pathObsY1, Path pathObsY2, Obstaculo obsY1, Obstaculo obsY2) { // --> Genera rectangulos en una de 3 posiciones
+            pathObsY1.addRect(obsY1.getLeft(), obsY1.getTop(), obsY1.getRight(), obsY1.getBottom(), Path.Direction.CCW);
+            pathObsY2.addRect(obsY2.getLeft(), obsY2.getTop(), obsY2.getRight(), obsY2.getBottom(), Path.Direction.CCW);
+            try {
+                paint.setColor(getResources().getColor(R.color.transparencia1));
+                canvas.drawPath(pathObsY1, paint);
+                canvas.drawPath(pathObsY2, paint);
+                t2.sleep(10000);
+                paint.setColor(getResources().getColor(R.color.transparencia2));
+                canvas.drawPath(pathObsY1, paint);
+                canvas.drawPath(pathObsY2, paint);
+                t2.sleep(10000);
+                paint.setColor(getResources().getColor(R.color.relleno));
+                canvas.drawPath(pathObsY1, paint);
+                canvas.drawPath(pathObsY2, paint);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            obsY1.setTocable(false);
+            obsY2.setTocable(false);
+        }
+    }
+}

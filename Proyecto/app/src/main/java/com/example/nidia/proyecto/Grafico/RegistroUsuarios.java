@@ -25,6 +25,7 @@ public class RegistroUsuarios extends Activity {
     Integer num = 0;
     ImageView img;
     AnimationDrawable ani;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,22 +41,24 @@ public class RegistroUsuarios extends Activity {
         ani.start();
         ruRegistrar.setOnClickListener(onClickListener);
     }
+
     View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
             pressed(view);
         }
     };
-    private void pressed(View view){
-        switch(view.getId()){
+
+    private void pressed(View view) {
+        switch (view.getId()) {
             case R.id.ruRegistrar:
-                if(ruUserName.getText().toString().equals("")){
-                    Toast.makeText(this, "Porfavor introduzca un nombre de usuario", Toast.LENGTH_SHORT).show();
-                }else if(ruCuenta.getText().toString().equals("")){
-                    Toast.makeText(this, "Porfavor introduzca una cuenta", Toast.LENGTH_SHORT).show();
-                }else if(ruPass.getText().toString().equals("")){
-                    Toast.makeText(this, "Porfavor introduzca una contraseña", Toast.LENGTH_SHORT).show();
-                }else{
+                if (ruUserName.getText().toString().equals("")) {
+                    Toast.makeText(this, "Porfavor, introduzca un nombre de usuario", Toast.LENGTH_SHORT).show();
+                } else if (ruCuenta.getText().toString().equals("")) {
+                    Toast.makeText(this, "Porfavor, introduzca una cuenta", Toast.LENGTH_SHORT).show();
+                } else if (ruPass.getText().toString().equals("")) {
+                    Toast.makeText(this, "Porfavor, introduzca una contraseña", Toast.LENGTH_SHORT).show();
+                } else {
                     registrarUsuarios();
                 }
                 break;
@@ -63,24 +66,20 @@ public class RegistroUsuarios extends Activity {
     }
 
     private void registrarUsuarios() {
-        ConexionBDD conn = new ConexionBDD(this,"bd_usuarios",null,1);
+        ConexionBDD conn = new ConexionBDD(this, "bd_usuarios", null, 1);
         SQLiteDatabase db = conn.getWritableDatabase();
         ContentValues values = new ContentValues();
-        Cursor c = db.rawQuery("SELECT * FROM " + Utilidades.tabla_usuarios,null);
+        Cursor c = db.rawQuery("SELECT * FROM " + Utilidades.tabla_usuarios, null);
         boolean ban = true;
 
         //db.execSQL("DELETE FROM "+ Utilidades.tabla_usuarios); //BORRAR LOS REGISTROS DE LA BASE DE DATOS SOLO PARA PRUEBAS
-        num = (int)(Math.random())+1;
-//BUSCAR VALORES REPETIDOS
-<<<<<<< HEAD
-       if(c.moveToFirst()){
-=======
-        if(c.moveToFirst()){
->>>>>>> master
-            do{
+        num = (int) (Math.random()) + 1;
+//BUSCA VALORES REPETIDOS
+        if (c.moveToFirst()) {
+            do {
                 String userName = c.getString(c.getColumnIndex(Utilidades.campo_userName));
                 String cuenta = c.getString(c.getColumnIndex(Utilidades.campo_cuenta));
-                if(userName.equals(ruUserName.getText().toString())){
+                if (userName.equals(ruUserName.getText().toString())) {
                     AlertDialog.Builder dialog = new AlertDialog.Builder(this);
                     dialog.setTitle("Importante");
                     dialog.setMessage("Ya existe un usuario con este nombre");
@@ -93,38 +92,38 @@ public class RegistroUsuarios extends Activity {
                     });
                     dialog.show();
                     ban = false;
-                }else{
-                if(cuenta.equals(ruCuenta.getText().toString())){
-                    AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-                    dialog.setTitle("Importante");
-                    dialog.setMessage("Ya existe un usuario con esta cuenta");
-                    dialog.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            ruCuenta.setText("");
-                            ruCuenta.requestFocus();
-                            dialog.dismiss();
-                        }
-                    });
-                    dialog.show();
-                    ban = false;
+                } else {
+                    if (cuenta.equals(ruCuenta.getText().toString())) {
+                        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+                        dialog.setTitle("Importante");
+                        dialog.setMessage("Ya existe un usuario con esta cuenta");
+                        dialog.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                ruCuenta.setText("");
+                                ruCuenta.requestFocus();
+                                dialog.dismiss();
+                            }
+                        });
+                        dialog.show();
+                        ban = false;
+                    }
                 }
-                }
-            }while(c.moveToNext());
+            } while (c.moveToNext());
         }
-        if(ban){
+        if (ban) {
             String suser = ruUserName.getText().toString();
-            values.put(Utilidades.campo_id,num);
-            values.put(Utilidades.campo_userName,suser);
-            values.put(Utilidades.campo_cuenta,ruCuenta.getText().toString());
-            values.put(Utilidades.campo_pass,ruPass.getText().toString());
-            values.put(Utilidades.campo_puntuacion,0);
-            Long id_resu = db.insert(Utilidades.tabla_usuarios,Utilidades.campo_id,values);
+            values.put(Utilidades.campo_id, num);
+            values.put(Utilidades.campo_userName, suser);
+            values.put(Utilidades.campo_cuenta, ruCuenta.getText().toString());
+            values.put(Utilidades.campo_pass, ruPass.getText().toString());
+            values.put(Utilidades.campo_puntuacion, 0);
+            Long id_resu = db.insert(Utilidades.tabla_usuarios, Utilidades.campo_id, values);
             Toast.makeText(this, "Registrado " + id_resu, Toast.LENGTH_SHORT).show();
             db.close();
 
             Intent intent1 = new Intent(this, PantallaJuego.class);
-            intent1.putExtra("pjrUser",suser);
-            intent1.putExtra("pjrPuntuacion","0");
+            intent1.putExtra("pjrUser", suser);
+            intent1.putExtra("pjrPuntuacion", "0");
             startActivity(intent1);
             finish();
         }
