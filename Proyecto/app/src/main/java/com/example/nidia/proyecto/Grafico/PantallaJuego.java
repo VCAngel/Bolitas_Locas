@@ -105,8 +105,6 @@ public class PantallaJuego extends AppCompatActivity {
 
     private class AreaJuego extends View { // --> Clase que representa el área donde se encuentra el juego
         private Path pathJugador = new Path();
-        private Obstaculo obs;
-        private Path pathObs = new Path();//Declaré un path para el obstaculo
         private int contadorHilo = 0;
         private int cantidadComida = 10; // --> Cantidad de comida predefinida dentro del area de juego
 
@@ -128,7 +126,6 @@ public class PantallaJuego extends AppCompatActivity {
                 listaComida.addBegin(new NodoComida(new Path()));
             }
             jugador = new Bolitas(35, Color.WHITE);
-            obs = new Obstaculo(200, 200, 400, 400);//No se como sea mejor hacerlos
         }
 
         public void onDraw(Canvas canvas) { //Se dibuja el canvas, se mantiene actualizándose continuamente
@@ -358,7 +355,6 @@ public class PantallaJuego extends AppCompatActivity {
                 System.out.println(t1.getId());
                 if (contadorHilo == 1) {
                     t1.start();
-
                 }
                 contadorHilo++;
             }
@@ -414,6 +410,8 @@ public class PantallaJuego extends AppCompatActivity {
             });
             dialog.setNegativeButton("Volver al Juego", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
+                    t1.interrupt();
+                    t2.interrupt();
                     Intent intent = getIntent();
                     finish();
                     startActivity(intent);
@@ -457,7 +455,7 @@ public class PantallaJuego extends AppCompatActivity {
             int x = 0;
             do {
                 x = (int) (Math.random() * 5000) + 1;
-            } while (x < 2500);
+            } while (x < 3000);
             try {
                 t1.sleep(x);
                 System.out.println(t1.isAlive());
@@ -482,11 +480,11 @@ public class PantallaJuego extends AppCompatActivity {
                 canvas.drawPath(pathObsX2, paint);
                 System.out.println(t1.getId());
                 System.out.println(t1.isAlive());
-                t1.sleep(5000);
+                t1.sleep(1000);
                 paint.setColor(getResources().getColor(R.color.transparencia2));
                 canvas.drawPath(pathObsX1, paint);
                 canvas.drawPath(pathObsX2, paint);
-                t1.sleep(5000);
+                t1.sleep(1000);
                 paint.setColor(getResources().getColor(R.color.relleno));
                 canvas.drawPath(pathObsX1, paint);
                 canvas.drawPath(pathObsX2, paint);
@@ -496,11 +494,6 @@ public class PantallaJuego extends AppCompatActivity {
             obsX1.setTocable(false);
             obsX2.setTocable(false);
         }
-
-
-        // --> Se usa por que el canvas cambia de referencia de memoria 2 veces mientras se
-        // inicializa, de esta manera podemos controlarlo desde los hilos secundarios
-
 
     }
 
@@ -531,7 +524,7 @@ public class PantallaJuego extends AppCompatActivity {
             int x = 0;
             do {
                 x = (int) (Math.random() * 5000) + 1;
-            } while (x < 2500);
+            } while (x < 3000);
             try {
                 t2.sleep(x);
                 randomRectY(pathObsY[randomRect1], pathObsY[randomRect2], obstaculosY[randomRect1], obstaculosY[randomRect2]);
@@ -553,11 +546,11 @@ public class PantallaJuego extends AppCompatActivity {
                 paint.setColor(getResources().getColor(R.color.transparencia1));
                 canvas.drawPath(pathObsY1, paint);
                 canvas.drawPath(pathObsY2, paint);
-                t2.sleep(5000);
+                t2.sleep(1000);
                 paint.setColor(getResources().getColor(R.color.transparencia2));
                 canvas.drawPath(pathObsY1, paint);
                 canvas.drawPath(pathObsY2, paint);
-                t2.sleep(5000);
+                t2.sleep(1000);
                 paint.setColor(getResources().getColor(R.color.relleno));
                 canvas.drawPath(pathObsY1, paint);
                 canvas.drawPath(pathObsY2, paint);
