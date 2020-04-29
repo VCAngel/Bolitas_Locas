@@ -62,12 +62,13 @@ public class LoginUsuarios extends Activity {
                 SQLiteDatabase db = conn.getWritableDatabase();
                 Cursor c = db.rawQuery("SELECT * FROM " + Utilidades.tabla_usuarios, null);
                 Boolean ban = false;
+                int punt1;
                 if (c.moveToFirst())
                     do {
                         String userName = c.getString(c.getColumnIndex(Utilidades.campo_userName));
                         String pass = c.getString(c.getColumnIndex(Utilidades.campo_pass));
-                        int puntuacion = c.getInt(c.getColumnIndex(Utilidades.campo_puntuacion));
-                        String punt = String.valueOf(puntuacion);
+                        punt1 = c.getInt(c.getColumnIndex(Utilidades.campo_puntuacion));
+                        String punt = String.valueOf(punt1);
                         if (userName.equals(lUser.getText().toString()) && pass.equals(lPass.getText().toString())) {
                             Intent intent = new Intent(this, PantallaJuego.class);
                             intent.putExtra("pjrUser", userName);

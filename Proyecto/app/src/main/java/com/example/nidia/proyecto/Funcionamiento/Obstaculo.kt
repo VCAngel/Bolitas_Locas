@@ -43,6 +43,9 @@ class Obstaculo {
     fun setTocable(tocable: Boolean){
         this.tocable = tocable
     }
+    fun getTocable():Boolean{
+        return tocable
+    }
     fun isTocable():Boolean{
         return tocable
     }

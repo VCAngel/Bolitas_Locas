@@ -69,7 +69,6 @@ class Bolitas {
     fun getPosiY():Float{
         return posiY
     }
-
     fun isInside(left: Int, top: Int, right: Int, bottom: Int): Boolean{
         if((this.getPosiX() > left) && (this.getPosiX() < right)){
             if((this.getPosiY() > top)&&(this.getPosiY() < bottom)){

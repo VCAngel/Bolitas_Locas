@@ -47,13 +47,22 @@
                 android:textColor="@color/colorAccent"
                 android:textSize="18sp"
                 android:textStyle="bold" />
+            <TextView
+                android:id="@+id/pjPuntuacionM"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:text="'Puntuación"
+                android:textColor="@color/colorAccent"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/pjSalir"
                 style="@style/Widget.AppCompat.Button.Colored"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_column="2"
+                android:layout_column="3"
                 android:background="@drawable/pj_exit_button"
                 android:text="Salir" />
         </TableRow>
